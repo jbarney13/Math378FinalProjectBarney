@@ -1,5 +1,0 @@
----
-title: "About"
----
-
-In this site I work through the labs 1-6 of DevOps for Data Scientists

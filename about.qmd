@@ -3,3 +3,5 @@ title: "About"
 ---
 
 In this site I work through the labs 1-6 of DevOps for Data Scientists
+
+The classification model page works through selecting and fitting a model for predicting the species of a penguin based on its physical attributes.

@@ -1,0 +1,139 @@
+---
+title: "Penguins EDA"
+format:
+  html:
+    code-fold: true
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(dbplyr)
+library(palmerpenguins)
+library(tidymodels)
+library(discrim)
+library(parsnip)
+library(kknn)
+library(poissonreg)
+tidymodels_prefer(quiet=TRUE)
+
+#con <- DBI::dbConnect(
+#  duckdb::duckdb(), 
+#  dbdir = "C:/Users/barne/Documents/Rstudio/Math 378 Final Project/Final Project/content/my-db.duckdb")
+#df <- dplyr::tbl(con, "penguins")
+df <- palmerpenguins::penguins
+```
+
+#Data Exploration
+
+```{r}
+summary(df)
+```
+
+```{r}
+df %>%
+  ggplot(aes(x = species, y = body_mass_g)) +
+  geom_boxplot()
+```
+
+```{r}
+df %>%
+  ggplot(aes(x = species, y = flipper_length_mm)) +
+  geom_boxplot()
+```
+
+```{r}
+df %>%
+  ggplot(aes(x = species, y = bill_length_mm)) +
+  geom_boxplot()
+```
+
+#Data Preparation
+
+```{r}
+set.seed(1026)
+```
+
+```{r}
+(penguin_split <- initial_split(df, prop = 0.8, strata = species))
+```
+
+```{r}
+Penguin_train <- training(penguin_split)
+Penguin_test <- testing(penguin_split)
+```
+
+#Model Testing
+
+##LDA
+
+```{r}
+lda_spec <- discrim_linear() %>%
+        set_mode("classification") %>%
+        set_engine("MASS")
+```
+
+```{r}
+lda_fit1<- lda_spec %>%
+    fit(species ~ bill_length_mm + body_mass_g + flipper_length_mm, data = Penguin_train)
+```
+
+```{r}
+lda_fit1_preds_test <- augment(lda_fit1 , new_data = Penguin_test) %>%
+        select(species, bill_length_mm, flipper_length_mm, body_mass_g, .pred_class) 
+```
+
+```{r}
+lda_fit1_preds_test %>%
+  conf_mat(truth = species, estimate = .pred_class)
+```
+
+##QDA
+```{r}
+qda_spec <- discrim_quad() %>%
+        set_mode("classification") %>%
+        set_engine("MASS")
+```
+
+
+```{r}
+qda_fit1<- qda_spec %>%
+    fit(species ~ bill_length_mm + body_mass_g + flipper_length_mm, data = Penguin_train)
+```
+
+```{r}
+qda_fit1_preds_test <- augment(qda_fit1 , new_data = Penguin_test) %>%
+        select(species, bill_length_mm, flipper_length_mm, body_mass_g, .pred_class) 
+```
+
+```{r}
+qda_fit1_preds_test %>%
+  conf_mat(truth = species, estimate = .pred_class)
+```
+
+##Naive Bayes
+
+```{r}
+nb_spec <- naive_Bayes() %>% 
+  set_mode("classification") %>% 
+  set_engine("klaR") %>% 
+  set_args(usekernel = FALSE)
+```
+
+```{r}
+nb_fit1<- nb_spec %>%
+  fit(species ~ bill_length_mm + body_mass_g + flipper_length_mm, data = Penguin_train)
+```
+
+```{r}
+nb_fit1_preds_test <- augment(nb_fit1 , new_data = Penguin_test) %>%
+        select(species, bill_length_mm, flipper_length_mm, body_mass_g, .pred_class) 
+```
+
+```{r}
+nb_fit1_preds_test %>%
+  conf_mat(truth = species, estimate = .pred_class)
+```
+
+##Results
+While all of the models provided similar results, the best model at evaluating the test data turned out to be the LDA model. 
